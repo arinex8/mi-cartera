@@ -8,6 +8,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1c084CK5HwYQk3Ouxy
 function sendToSheet(gasto) {
   try {
     const params = new URLSearchParams({
+      id: gasto.id || "",
       categoria: gasto.categoria || "",
       subcategoria: gasto.subcategoria || "",
       persona: gasto.persona || "",
@@ -15,7 +16,16 @@ function sendToSheet(gasto) {
       fecha: gasto.fecha || "",
     });
     const url = SCRIPT_URL + "?" + params.toString();
-    // Usamos imagen para evitar restricciones CORS
+    const img = new Image();
+    img.src = url;
+    return Promise.resolve(true);
+  } catch { return Promise.resolve(false); }
+}
+
+function deleteFromSheet(id) {
+  try {
+    const params = new URLSearchParams({ action: "delete", id });
+    const url = SCRIPT_URL + "?" + params.toString();
     const img = new Image();
     img.src = url;
     return Promise.resolve(true);
@@ -538,6 +548,10 @@ export default function App() {
   }
 
   function deleteEntry(id) {
+    // Si empieza por "u" es un gasto nuevo, lo borramos del Sheet también
+    if (id.startsWith("u")) {
+      deleteFromSheet(id);
+    }
     setUserGastos(p=>p.filter(g=>g.id!==id));
     setIngresos(p=>p.filter(i=>i.id!==id));
     setDeleteId(null);
