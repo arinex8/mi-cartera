@@ -14,26 +14,9 @@ async function sendToSheet(gasto) {
       importe: String(parseFloat(gasto.importe) || 0),
       fecha: gasto.fecha || "",
     });
-    const url = SCRIPT_URL + "?" + params.toString();
-    await fetch(url, {method:"GET", mode:"no-cors"});
-    // fallback imagen por si fetch falla
-    const img = new Image();
-    img.src = url;
+    await fetch(SCRIPT_URL + "?" + params.toString(), {method:"GET", mode:"no-cors"});
     return true;
-  } catch {
-    try {
-      const params = new URLSearchParams({
-        categoria: (gasto.categoria||"").trim().toUpperCase(),
-        subcategoria: (gasto.subcategoria||"").trim().toUpperCase(),
-        persona: (gasto.persona||"").trim().toUpperCase(),
-        importe: String(parseFloat(gasto.importe)||0),
-        fecha: gasto.fecha||"",
-      });
-      const img = new Image();
-      img.src = SCRIPT_URL + "?" + params.toString();
-    } catch {}
-    return false;
-  }
+  } catch { return false; }
 }
 
 async function deleteFromSheet(gasto) {
@@ -46,26 +29,9 @@ async function deleteFromSheet(gasto) {
       importe: String(parseFloat(gasto.importe) || 0),
       fecha: (gasto.fecha || "").trim(),
     });
-    const url = SCRIPT_URL + "?" + params.toString();
-    await fetch(url, {method:"GET", mode:"no-cors"});
-    const img = new Image();
-    img.src = url;
+    await fetch(SCRIPT_URL + "?" + params.toString(), {method:"GET", mode:"no-cors"});
     return true;
-  } catch {
-    try {
-      const params = new URLSearchParams({
-        action: "delete",
-        categoria: (gasto.categoria||"").trim().toUpperCase(),
-        subcategoria: (gasto.subcategoria||"").trim().toUpperCase(),
-        persona: (gasto.persona||"").trim().toUpperCase(),
-        importe: String(parseFloat(gasto.importe)||0),
-        fecha: (gasto.fecha||"").trim(),
-      });
-      const img = new Image();
-      img.src = SCRIPT_URL + "?" + params.toString();
-    } catch {}
-    return false;
-  }
+  } catch { return false; }
 }
 
 // ── CATEGORÍAS Y SUBCATEGORÍAS ──
