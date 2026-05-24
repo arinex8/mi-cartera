@@ -19,6 +19,21 @@ async function sendToSheet(gasto) {
   } catch { return false; }
 }
 
+async function sendToSheetNamed(sheet, gasto) {
+  try {
+    const params = new URLSearchParams({
+      sheet: sheet,
+      categoria: (gasto.categoria || "").trim().toUpperCase(),
+      subcategoria: (gasto.subcategoria || "").trim().toUpperCase(),
+      persona: (gasto.persona || "").trim().toUpperCase(),
+      importe: String(parseFloat(gasto.importe) || 0),
+      fecha: gasto.fecha || "",
+    });
+    await fetch(SCRIPT_URL + "?" + params.toString(), {method:"GET", mode:"no-cors"});
+    return true;
+  } catch { return false; }
+}
+
 async function deleteFromSheet(gasto) {
   try {
     const params = new URLSearchParams({
@@ -124,6 +139,11 @@ export default function App() {
   const [tab, setTab] = useState("add");
   const [userGastos, setUserGastos] = useState([]);
   const [ingresos, setIngresos] = useState([]);
+  const [gastosFijos, setGastosFijos] = useState(()=>{
+    try { return JSON.parse(localStorage.getItem("gastos_fijos_v1")||"[]"); } catch { return []; }
+  });
+  const [showFijos, setShowFijos] = useState(false);
+  const [nuevoFijo, setNuevoFijo] = useState({categoria:"ALQUILER",subcategoria:"",persona:"ADRI",importe:""});
   const [loaded, setLoaded] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [darkMode, setDarkMode] = useState(()=>{
@@ -240,7 +260,57 @@ export default function App() {
     };
     setIngresos(p=>[i,...p]);
     setIForm(f=>({...f, importe:"", concepto:""}));
+    // Guardar ingreso en Sheet pestaña INGRESOS
+    sendToSheetNamed("INGRESOS", {
+      categoria: i.concepto,
+      subcategoria: "",
+      persona: i.persona,
+      importe: i.importe,
+      fecha: i.fecha,
+    });
     flash(`✓ Ingreso ${fmt(i.importe)} · ${i.persona}`);
+  }
+
+  function addGastoFijo() {
+    if (!nuevoFijo.subcategoria || !nuevoFijo.importe) return flash("Completa todos los campos", false);
+    const fijo = { ...nuevoFijo, id: "f"+Date.now(), importe: parseFloat(nuevoFijo.importe) };
+    const nuevos = [...gastosFijos, fijo];
+    setGastosFijos(nuevos);
+    try { localStorage.setItem("gastos_fijos_v1", JSON.stringify(nuevos)); } catch {}
+    setNuevoFijo({categoria:"ALQUILER",subcategoria:"",persona:"ADRI",importe:""});
+    flash("✓ Gasto fijo añadido");
+  }
+
+  function deleteGastoFijo(id) {
+    const nuevos = gastosFijos.filter(f=>f.id!==id);
+    setGastosFijos(nuevos);
+    try { localStorage.setItem("gastos_fijos_v1", JSON.stringify(nuevos)); } catch {}
+    flash("✓ Gasto fijo eliminado");
+  }
+
+  async function registrarFijosMes() {
+    if (gastosFijos.length === 0) return flash("No tienes gastos fijos configurados", false);
+    const hoy = new Date().toISOString().split("T")[0];
+    const mes = hoy.slice(0,7);
+    // Verificar si ya se registraron este mes
+    const yaRegistrados = userGastos.filter(g=>g.fecha.startsWith(mes) && g.id.startsWith("fijo_"));
+    if (yaRegistrados.length > 0) {
+      if (!window.confirm(`Ya registraste los fijos de este mes (${yaRegistrados.length} gastos). ¿Registrar de nuevo?`)) return;
+    }
+    const nuevosGastos = gastosFijos.map(f=>({
+      id: "fijo_"+f.id+"_"+mes,
+      categoria: f.categoria,
+      subcategoria: f.subcategoria,
+      persona: f.persona,
+      importe: f.importe,
+      fecha: hoy,
+      descripcion: f.subcategoria,
+    }));
+    for (const g of nuevosGastos) {
+      await sendToSheet(g);
+    }
+    setUserGastos(p=>[...p, ...nuevosGastos]);
+    flash(`✓ ${nuevosGastos.length} gastos fijos registrados para este mes`);
   }
 
   async function resetStorage() {
@@ -509,6 +579,86 @@ export default function App() {
               </div>
             )}
 
+
+            {/* Gastos fijos */}
+            <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${dm?"#2A2A3A":"#E8E8F0"}`}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <div style={{fontSize:11,color:dm?"#FF9999":"#9090B0",letterSpacing:"1px",textTransform:"uppercase",fontWeight:600}}>
+                  📌 Gastos fijos ({gastosFijos.length})
+                </div>
+                <div style={{display:"flex",gap:6}}>
+                  <button onClick={()=>setShowFijos(p=>!p)} style={{...mbtn,color:dm?"#FF9999":"#7070A0"}}>
+                    {showFijos?"Cerrar":"Gestionar"}
+                  </button>
+                  {gastosFijos.length>0 && (
+                    <button onClick={registrarFijosMes} style={{
+                      background:"linear-gradient(135deg,#C9963A,#A07020)",border:"none",
+                      borderRadius:8,padding:"5px 10px",color:"#FFFFFF",fontSize:12,
+                      cursor:"pointer",fontFamily:"inherit",fontWeight:600
+                    }}>⚡ Registrar este mes</button>
+                  )}
+                </div>
+              </div>
+
+              {showFijos && (
+                <div>
+                  {/* Lista de fijos */}
+                  {gastosFijos.map(f=>(
+                    <div key={f.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",
+                      borderBottom:`1px solid ${dm?"#1E1E2E":"#F0F0F8"}`}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:12,fontWeight:600,color:dm?"#FF6B6B":"#1A1A2E"}}>{f.subcategoria}</div>
+                        <div style={{fontSize:11,color:dm?"#FF9999":"#9090B0"}}>
+                          {f.categoria} · <span style={{color:f.persona==="ADRI"?"#6B8CFF":"#F472B6"}}>{f.persona}</span>
+                        </div>
+                      </div>
+                      <div style={{fontSize:14,fontWeight:700,fontFamily:"monospace",color:dm?"#FF6B6B":"#CC2222"}}>
+                        {fmt(f.importe)}
+                      </div>
+                      <button onClick={()=>deleteGastoFijo(f.id)} style={{...mbtn,opacity:0.4}}>🗑</button>
+                    </div>
+                  ))}
+
+                  {/* Añadir nuevo fijo */}
+                  <div style={{marginTop:12,padding:12,background:dm?"#12122A":"#F8F8FF",
+                    borderRadius:10,border:`1px solid ${dm?"#2A2A4A":"#D0D0F0"}`}}>
+                    <div style={{fontSize:11,color:dm?"#FF9999":"#6060A0",marginBottom:8,fontWeight:600}}>
+                      + Nuevo gasto fijo
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      <select value={nuevoFijo.categoria}
+                        onChange={e=>{
+                          const cat = e.target.value;
+                          setNuevoFijo(f=>({...f,categoria:cat,subcategoria:""}));
+                        }} style={{...inp,fontSize:13}}>
+                        {Object.keys(CATS).map(c=><option key={c}>{c}</option>)}
+                      </select>
+                      <select value={nuevoFijo.subcategoria}
+                        onChange={e=>setNuevoFijo(f=>({...f,subcategoria:e.target.value}))}
+                        style={{...inp,fontSize:13}}>
+                        <option value="">Subcategoría</option>
+                        {(CATS[nuevoFijo.categoria]||[]).map(s=><option key={s}>{s}</option>)}
+                      </select>
+                      <div style={{display:"flex",gap:8}}>
+                        <select value={nuevoFijo.persona}
+                          onChange={e=>setNuevoFijo(f=>({...f,persona:e.target.value}))}
+                          style={{...inp,fontSize:13,flex:1}}>
+                          <option>ADRI</option><option>MARI</option>
+                        </select>
+                        <input type="number" placeholder="€" value={nuevoFijo.importe}
+                          onChange={e=>setNuevoFijo(f=>({...f,importe:e.target.value}))}
+                          style={{...inp,fontSize:13,flex:1}}/>
+                      </div>
+                      <button onClick={addGastoFijo} style={{
+                        background:"linear-gradient(135deg,#6B8CFF,#4A6ADD)",border:"none",
+                        borderRadius:8,padding:"10px",color:"#FFFFFF",fontSize:13,
+                        cursor:"pointer",fontFamily:"inherit",fontWeight:600
+                      }}>Añadir gasto fijo</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Últimos gastos este mes */}
             <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${dm?"#2A2A3A":"#E8E8F0"}`}}>
