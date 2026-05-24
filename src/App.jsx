@@ -915,13 +915,13 @@ export default function App() {
 
             {/* KPIs */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-              <KCard label="Total gastos" value={fmt(totalGastos)} accent="#EF4444"/>
-              <KCard label="Ingresos" value={fmt(totalIngresos)} accent="#22C55E"/>
-              <KCard label={hayIngresos ? "Saldo" : "Saldo"}
+              <KCard dm={dm} label="Total gastos" value={fmt(totalGastos)} accent="#EF4444"/>
+              <KCard dm={dm} label="Ingresos" value={fmt(totalIngresos)} accent="#22C55E"/>
+              <KCard dm={dm} label={hayIngresos ? "Saldo" : "Saldo"}
                 value={hayIngresos ? fmt(saldo) : "—"}
                 accent={!hayIngresos ? "#BBBBCC" : saldo>=0?"#22C55E":"#EF4444"}
                 sub={!hayIngresos ? "Añade ingresos para ver" : saldo>=0?"superávit":"déficit"}/>
-              <KCard label="Media mensual"
+              <KCard dm={dm} label="Media mensual"
                 value={monthsOfYear.filter(m => filterMonth==="all" || m===filterMonth).length > 0
                   ? fmt(totalGastos / (filterMonth==="all" ? monthsOfYear.length : 1))
                   : "—"}
@@ -1137,7 +1137,7 @@ export default function App() {
             })()}
 
             {/* Barra Adri vs Mari */}
-            <Sec title="Adri vs Mari por mes">
+            <Sec dm={dm} title="Adri vs Mari por mes">
               <ResponsiveContainer width="100%" height={165}>
                 <BarChart data={byMonthData} margin={{top:4,right:0,left:-22,bottom:0}}>
                   <CartesianGrid strokeDasharray="2 4" stroke="#1E1E2E"/>
@@ -1153,7 +1153,7 @@ export default function App() {
 
             {/* Pie categorías */}
             {byCat.length>0 && (
-              <Sec title="Por categoría">
+              <Sec dm={dm} title="Por categoría">
                 <ResponsiveContainer width="100%" height={170}>
                   <PieChart>
                     <Pie data={byCat} dataKey="total" nameKey="name" cx="50%" cy="50%" outerRadius={72} innerRadius={36}>
@@ -1179,7 +1179,7 @@ export default function App() {
 
             {/* Ingresos */}
             {filteredIngresos.length>0 && (
-              <Sec title="Ingresos registrados">
+              <Sec dm={dm} title="Ingresos registrados">
                 {filteredIngresos.map(i=>(
                   <div key={i.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #0C0C16",fontSize:12}}>
                     <div style={{display:"flex",gap:10,alignItems:"center"}}>
@@ -1295,7 +1295,7 @@ const mbtn = {
 function F({label,children}) {
   return (
     <div>
-      <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:5,fontWeight:600}}>{label}</div>
+      <div style={{fontSize:11,color:"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:5,fontWeight:600}}>{label}</div>
       {children}
     </div>
   );
@@ -1315,20 +1315,20 @@ function Pill({label,active,onClick,color="#C9963A"}) {
   );
 }
 
-function KCard({label,value,accent,sub}) {
+function KCard({label,value,accent,sub,dm}) {
   return (
-    <div style={{background:"#FFFFFF",border:"1px solid #D0D0E0",borderRadius:10,
+    <div style={{background:dm?"#1A1A2E":"#FFFFFF",border:`1px solid ${dm?"#2A2A3A":"#D0D0E0"}`,borderRadius:10,
       padding:"14px 16px",borderLeft:`2px solid ${accent}`}}>
       <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:6,fontWeight:600}}>{label}</div>
-      <div style={{fontSize:20,fontWeight:700,color:"#1A1A2E",fontFamily:"monospace"}}>{value}</div>
+      <div style={{fontSize:20,fontWeight:700,color:dm?"#FFFFFF":"#1A1A2E",fontFamily:"monospace"}}>{value}</div>
       {sub && <div style={{fontSize:10,color:accent,marginTop:3}}>{sub}</div>}
     </div>
   );
 }
 
-function Sec({title,children}) {
+function Sec({title,children,dm}) {
   return (
-    <div style={{background:"#FFFFFF",border:"1px solid #D0D0E0",borderRadius:12,padding:"16px 18px",marginBottom:14}}>
+    <div style={{background:dm?"#1A1A2E":"#FFFFFF",border:`1px solid ${dm?"#2A2A3A":"#D0D0E0"}`,borderRadius:12,padding:"16px 18px",marginBottom:14}}>
       <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:14,fontWeight:600}}>{title}</div>
       {children}
     </div>
