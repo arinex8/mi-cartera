@@ -25,11 +25,11 @@ function deleteFromSheet(gasto) {
   try {
     const params = new URLSearchParams({
       action: "delete",
-      categoria: gasto.categoria || "",
-      subcategoria: gasto.subcategoria || "",
-      persona: gasto.persona || "",
-      importe: String(gasto.importe || ""),
-      fecha: gasto.fecha || "",
+      categoria: (gasto.categoria || "").trim().toUpperCase(),
+      subcategoria: (gasto.subcategoria || "").trim().toUpperCase(),
+      persona: (gasto.persona || "").trim().toUpperCase(),
+      importe: String(parseFloat(gasto.importe) || 0),
+      fecha: (gasto.fecha || "").trim(),
     });
     const url = SCRIPT_URL + "?" + params.toString();
     const img = new Image();
@@ -179,21 +179,8 @@ export default function App() {
           }))
           .filter(r => r.categoria && r.importe > 0 && r.fecha);
 
-        // Aplicar borrados locales
-        let filtered = parsed;
-        try {
-          const deleted = JSON.parse(localStorage.getItem("deleted_v1")||"[]");
-          if (deleted.length > 0) {
-            filtered = parsed.filter(r => !deleted.some(d =>
-              d.categoria===r.categoria && d.subcategoria===r.subcategoria &&
-              d.persona===r.persona && String(d.importe)===String(r.importe) &&
-              d.fecha===r.fecha
-            ));
-          }
-        } catch {}
-
-        if (filtered.length > 0) {
-          setUserGastos(filtered);
+        if (parsed.length > 0) {
+          setUserGastos(parsed);
           localStorage.setItem("gastos_v3", JSON.stringify(parsed));
         }
 
@@ -279,20 +266,11 @@ export default function App() {
 
   function deleteEntry(id) {
     const gasto = userGastos.find(g=>g.id===id);
-    if (gasto) {
-      deleteFromSheet(gasto);
-      // Guardar borrados localmente para persistir
-      try {
-        const deleted = JSON.parse(localStorage.getItem("deleted_v1")||"[]");
-        deleted.push({categoria:gasto.categoria,subcategoria:gasto.subcategoria,
-          persona:gasto.persona,importe:gasto.importe,fecha:gasto.fecha});
-        localStorage.setItem("deleted_v1", JSON.stringify(deleted.slice(-100)));
-      } catch {}
-    }
+    if (gasto) deleteFromSheet(gasto);
     setUserGastos(p=>p.filter(g=>g.id!==id));
     setIngresos(p=>p.filter(i=>i.id!==id));
     setDeleteId(null);
-    flash("Eliminado");
+    flash("✓ Eliminado — el Sheet se actualizará en segundos");
   }
 
   // Exportar CSV para copiar al Sheet
