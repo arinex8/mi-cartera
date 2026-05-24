@@ -750,7 +750,7 @@ export default function App() {
 
             {/* Form Gasto */}
             {formTab==="gasto" && (
-              <div style={{background:"#FFFFFF",border:"1px solid #E0E0EA",borderRadius:12,padding:20,marginBottom:20}}>
+              <div style={{background:card,border:`1px solid ${border}`,borderRadius:12,padding:20,marginBottom:20}}>
                 <div style={{display:"grid",gap:14}}>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                     <F label="Fecha"><input type="date" value={form.fecha} onChange={e=>setForm(f=>({...f,fecha:e.target.value}))} style={inp}/></F>
@@ -1025,7 +1025,7 @@ export default function App() {
                 if (topCats.length === 0) return null;
                 return (
                   <div style={{marginBottom:14}}>
-                    <div style={{fontSize:11,color:"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
+                    <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
                       📊 Top categorías — {periodoLabel} · {personaLabel}
                     </div>
                     {topCats.map((a,i)=>(
@@ -1093,7 +1093,7 @@ export default function App() {
 
               return (
                 <div style={{marginBottom:14}}>
-                  <div style={{fontSize:11,color:"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
+                  <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
                     🔔 {periodoLabel} · {personaLabel} — vs {refLabel}
                   </div>
 
@@ -1295,7 +1295,7 @@ const mbtn = {
 function F({label,children}) {
   return (
     <div>
-      <div style={{fontSize:11,color:"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:5,fontWeight:600}}>{label}</div>
+      <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:5,fontWeight:600}}>{label}</div>
       {children}
     </div>
   );
@@ -1319,7 +1319,7 @@ function KCard({label,value,accent,sub}) {
   return (
     <div style={{background:"#FFFFFF",border:"1px solid #D0D0E0",borderRadius:10,
       padding:"14px 16px",borderLeft:`2px solid ${accent}`}}>
-      <div style={{fontSize:11,color:"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:6,fontWeight:600}}>{label}</div>
+      <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:6,fontWeight:600}}>{label}</div>
       <div style={{fontSize:20,fontWeight:700,color:"#1A1A2E",fontFamily:"monospace"}}>{value}</div>
       {sub && <div style={{fontSize:10,color:accent,marginTop:3}}>{sub}</div>}
     </div>
@@ -1329,7 +1329,7 @@ function KCard({label,value,accent,sub}) {
 function Sec({title,children}) {
   return (
     <div style={{background:"#FFFFFF",border:"1px solid #D0D0E0",borderRadius:12,padding:"16px 18px",marginBottom:14}}>
-      <div style={{fontSize:11,color:"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:14,fontWeight:600}}>{title}</div>
+      <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:14,fontWeight:600}}>{title}</div>
       {children}
     </div>
   );
