@@ -459,23 +459,67 @@ export default function App() {
     fecha: todayStr(), importe: "", persona: "ADRI", concepto: ""
   });
 
-  // Carga inicial - limpia datos viejos de versiones anteriores
+  // Carga inicial + sincronización con Sheet
   useEffect(() => {
     (async () => {
       try {
-        // Limpiar claves antiguas de versiones previas que causaban duplicados
-        try { localStorage.removeItem("gastos_v2"); } catch {}
-        try { localStorage.removeItem("ingresos_v2"); } catch {}
-        try { localStorage.removeItem("gastos_data"); } catch {}
-        try { localStorage.removeItem("ingresos_data"); } catch {}
-
-        const r1 = JSON.parse(localStorage.getItem("gastos_v3") || "null");
-        if (r1) setUserGastos(JSON.parse(r1));
-        const r2 = JSON.parse(localStorage.getItem("ingresos_v3") || "null");
+        const r2 = localStorage.getItem("ingresos_v3");
         if (r2) setIngresos(JSON.parse(r2));
-        const r3 = JSON.parse(localStorage.getItem("last_sync_v3") || "null");
-        if (r3) setLastSync(r3.value);
       } catch {}
+
+      setSyncing(true);
+      try {
+        const sheetName = "ENTRADA DATOS";
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+        const res = await fetch(url);
+        const text = await res.text();
+        const json = JSON.parse(text.slice(47, -2));
+        const rows = (json.table?.rows || [])
+          .map(r => r.c.map(c => c ? (c.v ?? c.f ?? "") : ""));
+
+        const parsed = rows
+          .filter(r => r[0] || r[1])
+          .map(r => {
+            const hasId = String(r[0]).startsWith("u");
+            if (hasId) {
+              return {
+                id: String(r[0]),
+                categoria: String(r[1]),
+                subcategoria: String(r[2]),
+                persona: String(r[3]),
+                importe: parseFloat(String(r[4]).replace(",",".")) || 0,
+                fecha: String(r[5]),
+                descripcion: String(r[2]),
+              };
+            } else {
+              return {
+                id: "s" + String(r[0]) + String(r[1]),
+                categoria: String(r[0]),
+                subcategoria: String(r[1]),
+                persona: String(r[2]),
+                importe: parseFloat(String(r[3]).replace("€","").replace(",",".").trim()) || 0,
+                fecha: String(r[4]),
+                descripcion: String(r[1]),
+              };
+            }
+          })
+          .filter(r => r.categoria && r.importe > 0);
+
+        if (parsed.length > 0) {
+          setUserGastos(parsed);
+          localStorage.setItem("gastos_v3", JSON.stringify(parsed));
+        }
+
+        const now = new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
+        setLastSync(now);
+        localStorage.setItem("last_sync_v3", now);
+      } catch {
+        try {
+          const r1 = localStorage.getItem("gastos_v3");
+          if (r1) setUserGastos(JSON.parse(r1));
+        } catch {}
+      }
+      setSyncing(false);
       setLoaded(true);
     })();
   }, []);
