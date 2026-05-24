@@ -568,17 +568,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Nota sync */}
-            {userGastos.length > 0 && (
-              <div style={{background:"#FFFFFF",border:"1px solid #E0E0EA",borderRadius:8,padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <span style={{fontSize:11,color:"#9090BB"}}>{userGastos.length} gastos nuevos sin sincronizar al Sheet</span>
-                <button onClick={exportCSV} style={{background:"#F0F0FF",border:"1px solid #D0D0F0",borderRadius:6,
-                  padding:"5px 10px",color:"#6060AA",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>
-                  Exportar CSV
-                </button>
-              </div>
-            )}
-
 
             {/* Gastos fijos */}
             <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${dm?"#2A2A3A":"#E8E8F0"}`}}>
