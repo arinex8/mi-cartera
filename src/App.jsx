@@ -5,22 +5,21 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis
 const SHEET_ID = "1AWDbbyt3rMhzjjR2Vj0v_QaAuw1Z80uE4L5tbeDvz6M";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsx8u3d6mc1wxm-DEOS4jWP1ZJ39XH3Juh-ENfke4o7eFyDW4_T1wevR-gZb5_XIVF/exec";
 
-async function sendToSheet(gasto) {
+function sendToSheet(gasto) {
   try {
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        categoria: gasto.categoria,
-        subcategoria: gasto.subcategoria,
-        persona: gasto.persona,
-        importe: gasto.importe,
-        fecha: gasto.fecha,
-      }),
+    const params = new URLSearchParams({
+      categoria: gasto.categoria || "",
+      subcategoria: gasto.subcategoria || "",
+      persona: gasto.persona || "",
+      importe: gasto.importe || "",
+      fecha: gasto.fecha || "",
     });
-    return true;
-  } catch { return false; }
+    const url = SCRIPT_URL + "?" + params.toString();
+    // Usamos imagen para evitar restricciones CORS
+    const img = new Image();
+    img.src = url;
+    return Promise.resolve(true);
+  } catch { return Promise.resolve(false); }
 }
 
 // ── CATEGORÍAS Y SUBCATEGORÍAS ──
@@ -1274,3 +1273,4 @@ function Sec({title,children}) {
     </div>
   );
 }
+
