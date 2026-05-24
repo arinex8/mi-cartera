@@ -8,11 +8,10 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1c084CK5HwYQk3Ouxy
 function sendToSheet(gasto) {
   try {
     const params = new URLSearchParams({
-      id: gasto.id || "",
       categoria: gasto.categoria || "",
       subcategoria: gasto.subcategoria || "",
       persona: gasto.persona || "",
-      importe: gasto.importe || "",
+      importe: String(gasto.importe || ""),
       fecha: gasto.fecha || "",
     });
     const url = SCRIPT_URL + "?" + params.toString();
@@ -22,9 +21,16 @@ function sendToSheet(gasto) {
   } catch { return Promise.resolve(false); }
 }
 
-function deleteFromSheet(id) {
+function deleteFromSheet(gasto) {
   try {
-    const params = new URLSearchParams({ action: "delete", id });
+    const params = new URLSearchParams({
+      action: "delete",
+      categoria: gasto.categoria || "",
+      subcategoria: gasto.subcategoria || "",
+      persona: gasto.persona || "",
+      importe: String(gasto.importe || ""),
+      fecha: gasto.fecha || "",
+    });
     const url = SCRIPT_URL + "?" + params.toString();
     const img = new Image();
     img.src = url;
@@ -444,6 +450,9 @@ export default function App() {
   const [ingresos, setIngresos] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [darkMode, setDarkMode] = useState(()=>{
+    try { return localStorage.getItem("darkMode") === "true"; } catch { return false; }
+  });
   const [lastSync, setLastSync] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -478,31 +487,16 @@ export default function App() {
           .map(r => r.c.map(c => c ? (c.v ?? c.f ?? "") : ""));
 
         const parsed = rows
-          .filter(r => r[0] || r[1])
-          .map(r => {
-            const hasId = String(r[0]).startsWith("u");
-            if (hasId) {
-              return {
-                id: String(r[0]),
-                categoria: String(r[1]),
-                subcategoria: String(r[2]),
-                persona: String(r[3]),
-                importe: parseFloat(String(r[4]).replace(",",".")) || 0,
-                fecha: String(r[5]),
-                descripcion: String(r[2]),
-              };
-            } else {
-              return {
-                id: "s" + String(r[0]) + String(r[1]),
-                categoria: String(r[0]),
-                subcategoria: String(r[1]),
-                persona: String(r[2]),
-                importe: parseFloat(String(r[3]).replace("€","").replace(",",".").trim()) || 0,
-                fecha: String(r[4]),
-                descripcion: String(r[1]),
-              };
-            }
-          })
+          .filter(r => r[0] && r[3])
+          .map((r, i) => ({
+            id: "sheet_" + i + "_" + String(r[0]).slice(0,4),
+            categoria: String(r[0]).trim(),
+            subcategoria: String(r[1]).trim(),
+            persona: String(r[2]).trim(),
+            importe: parseFloat(String(r[3]).replace("€","").replace(",",".").trim()) || 0,
+            fecha: String(r[4]).trim(),
+            descripcion: String(r[1]).trim(),
+          }))
           .filter(r => r.categoria && r.importe > 0);
 
         if (parsed.length > 0) {
@@ -592,10 +586,8 @@ export default function App() {
   }
 
   function deleteEntry(id) {
-    // Si empieza por "u" es un gasto nuevo, lo borramos del Sheet también
-    if (id.startsWith("u")) {
-      deleteFromSheet(id);
-    }
+    const gasto = userGastos.find(g=>g.id===id);
+    if (gasto) deleteFromSheet(gasto);
     setUserGastos(p=>p.filter(g=>g.id!==id));
     setIngresos(p=>p.filter(i=>i.id!==id));
     setDeleteId(null);
@@ -672,19 +664,36 @@ export default function App() {
 
   const recentEntries = [...userGastos, ...ingresos].sort((a,b)=>b.id.localeCompare(a.id)).slice(0,20);
 
+  const dm = darkMode;
+  const bg = dm ? "#0F0F1A" : "#F5F6FA";
+  const card = dm ? "#1A1A2E" : "#FFFFFF";
+  const text = dm ? "#E8E4DE" : "#1A1A2E";
+  const border = dm ? "#2A2A3A" : "#E0E0EA";
+  const subtext = dm ? "#8080A0" : "#7070A0";
+
   return (
-    <div style={{minHeight:"100vh",background:"#F5F6FA",color:"#1A1A2E",fontFamily:"'Georgia',serif"}}>
+    <div style={{minHeight:"100vh",background:bg,color:text,fontFamily:"'Georgia',serif"}}>
 
       {/* ── HEADER ── */}
-      <div style={{background:"linear-gradient(160deg,#FFFFFF 0%,#F5F6FA 100%)",borderBottom:"1px solid #E0E0EA",padding:"18px 16px 0"}}>
+      <div style={{background:dm?"#12121E":"linear-gradient(160deg,#FFFFFF 0%,#F5F6FA 100%)",borderBottom:`1px solid ${border}`,padding:"18px 16px 0"}}>
         <div style={{maxWidth:640,margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:4}}>
             <div>
               <div style={{fontSize:24,fontWeight:700,letterSpacing:"-0.5px",lineHeight:1.2}}>Mi Cartera</div>
-              <div style={{fontSize:11,color:"#8080AA",fontFamily:"monospace",marginTop:2}}>Adri & Mari · {allGastos.length} registros</div>
+              <div style={{fontSize:11,color:subtext,fontFamily:"monospace",marginTop:2}}>Adri & Mari · {allGastos.length} registros</div>
             </div>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontSize:11,color:"#8080AA",marginBottom:2}}>
+            <div style={{textAlign:"right",display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+              {/* Toggle modo noche/día */}
+              <button onClick={()=>{
+                const next = !darkMode;
+                setDarkMode(next);
+                try { localStorage.setItem("darkMode", String(next)); } catch {}
+              }} style={{
+                background:dm?"#2A2A4A":"#F0F0F8",border:`1px solid ${border}`,
+                borderRadius:20,padding:"3px 10px",cursor:"pointer",
+                fontSize:14,lineHeight:1,color:dm?"#C9963A":"#7070A0",
+              }}>{dm ? "☀️" : "🌙"}</button>
+              <div style={{fontSize:11,color:subtext,marginBottom:2}}>
                 {syncing ? "🔄 sincronizando..." : lastSync ? `✓ sync ${lastSync}` : "sin sync"}
               </div>
               <div style={{fontSize:12,color:"#6B8CFF"}}>Adri: {fmt(totalAdri)}</div>
@@ -695,7 +704,7 @@ export default function App() {
             {[["add","＋ Añadir"],["dashboard","📊 Dashboard"],["list","📋 Historial"]].map(([t,l])=>(
               <button key={t} onClick={()=>setTab(t)} style={{
                 background:"none",border:"none",cursor:"pointer",padding:"8px 16px",fontSize:13,
-                fontFamily:"inherit",color:tab===t?"#C9963A":"#7070A0",whiteSpace:"nowrap",
+                fontFamily:"inherit",color:tab===t?"#C9963A":subtext,whiteSpace:"nowrap",
                 borderBottom:tab===t?"2px solid #C9963A":"2px solid transparent",
                 fontWeight:tab===t?600:400,transition:"color 0.15s"
               }}>{l}</button>
