@@ -5,23 +5,38 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis
 const SHEET_ID = "1AWDbbyt3rMhzjjR2Vj0v_QaAuw1Z80uE4L5tbeDvz6M";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1c084CK5HwYQk3Ouxy0KKGz2jXQNHYU3zeS__Q9x1VD_v1ATFPEWdQBDFE-N21gG6/exec";
 
-function sendToSheet(gasto) {
+async function sendToSheet(gasto) {
   try {
     const params = new URLSearchParams({
-      categoria: gasto.categoria || "",
-      subcategoria: gasto.subcategoria || "",
-      persona: gasto.persona || "",
-      importe: String(gasto.importe || ""),
+      categoria: (gasto.categoria || "").trim().toUpperCase(),
+      subcategoria: (gasto.subcategoria || "").trim().toUpperCase(),
+      persona: (gasto.persona || "").trim().toUpperCase(),
+      importe: String(parseFloat(gasto.importe) || 0),
       fecha: gasto.fecha || "",
     });
     const url = SCRIPT_URL + "?" + params.toString();
+    await fetch(url, {method:"GET", mode:"no-cors"});
+    // fallback imagen por si fetch falla
     const img = new Image();
     img.src = url;
-    return Promise.resolve(true);
-  } catch { return Promise.resolve(false); }
+    return true;
+  } catch {
+    try {
+      const params = new URLSearchParams({
+        categoria: (gasto.categoria||"").trim().toUpperCase(),
+        subcategoria: (gasto.subcategoria||"").trim().toUpperCase(),
+        persona: (gasto.persona||"").trim().toUpperCase(),
+        importe: String(parseFloat(gasto.importe)||0),
+        fecha: gasto.fecha||"",
+      });
+      const img = new Image();
+      img.src = SCRIPT_URL + "?" + params.toString();
+    } catch {}
+    return false;
+  }
 }
 
-function deleteFromSheet(gasto) {
+async function deleteFromSheet(gasto) {
   try {
     const params = new URLSearchParams({
       action: "delete",
@@ -32,10 +47,25 @@ function deleteFromSheet(gasto) {
       fecha: (gasto.fecha || "").trim(),
     });
     const url = SCRIPT_URL + "?" + params.toString();
+    await fetch(url, {method:"GET", mode:"no-cors"});
     const img = new Image();
     img.src = url;
-    return Promise.resolve(true);
-  } catch { return Promise.resolve(false); }
+    return true;
+  } catch {
+    try {
+      const params = new URLSearchParams({
+        action: "delete",
+        categoria: (gasto.categoria||"").trim().toUpperCase(),
+        subcategoria: (gasto.subcategoria||"").trim().toUpperCase(),
+        persona: (gasto.persona||"").trim().toUpperCase(),
+        importe: String(parseFloat(gasto.importe)||0),
+        fecha: (gasto.fecha||"").trim(),
+      });
+      const img = new Image();
+      img.src = SCRIPT_URL + "?" + params.toString();
+    } catch {}
+    return false;
+  }
 }
 
 // ── CATEGORÍAS Y SUBCATEGORÍAS ──
