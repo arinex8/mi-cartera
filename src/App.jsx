@@ -179,8 +179,21 @@ export default function App() {
           }))
           .filter(r => r.categoria && r.importe > 0 && r.fecha);
 
-        if (parsed.length > 0) {
-          setUserGastos(parsed);
+        // Aplicar borrados locales
+        let filtered = parsed;
+        try {
+          const deleted = JSON.parse(localStorage.getItem("deleted_v1")||"[]");
+          if (deleted.length > 0) {
+            filtered = parsed.filter(r => !deleted.some(d =>
+              d.categoria===r.categoria && d.subcategoria===r.subcategoria &&
+              d.persona===r.persona && String(d.importe)===String(r.importe) &&
+              d.fecha===r.fecha
+            ));
+          }
+        } catch {}
+
+        if (filtered.length > 0) {
+          setUserGastos(filtered);
           localStorage.setItem("gastos_v3", JSON.stringify(parsed));
         }
 
@@ -266,7 +279,16 @@ export default function App() {
 
   function deleteEntry(id) {
     const gasto = userGastos.find(g=>g.id===id);
-    if (gasto) deleteFromSheet(gasto);
+    if (gasto) {
+      deleteFromSheet(gasto);
+      // Guardar borrados localmente para persistir
+      try {
+        const deleted = JSON.parse(localStorage.getItem("deleted_v1")||"[]");
+        deleted.push({categoria:gasto.categoria,subcategoria:gasto.subcategoria,
+          persona:gasto.persona,importe:gasto.importe,fecha:gasto.fecha});
+        localStorage.setItem("deleted_v1", JSON.stringify(deleted.slice(-100)));
+      } catch {}
+    }
     setUserGastos(p=>p.filter(g=>g.id!==id));
     setIngresos(p=>p.filter(i=>i.id!==id));
     setDeleteId(null);
@@ -516,12 +538,12 @@ export default function App() {
 
             {/* Últimos gastos este mes */}
             <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${dm?"#2A2A3A":"#E8E8F0"}`}}>
-              <div style={{fontSize:11,color:dm?"#8080AA":"#9090B0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
+              <div style={{fontSize:11,color:dm?"#FF9999":"#9090B0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
                 Gastos de este mes ({recentEntries.length})
               </div>
 
             {recentEntries.length === 0 ? (
-              <div style={{color:dm?"#6060A0":"#A0A0C0",fontSize:13,textAlign:"center",padding:20}}>
+              <div style={{color:dm?"#FF9999":"#A0A0C0",fontSize:13,textAlign:"center",padding:20}}>
                 Aún no hay gastos este mes
               </div>
             ) : recentEntries.map(e => {
@@ -534,10 +556,10 @@ export default function App() {
                     💸
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:600,color:dm?"#FFFFFF":"#1A1A2E",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    <div style={{fontSize:13,fontWeight:600,color:dm?"#FF6B6B":"#1A1A2E",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                       {e.subcategoria || e.categoria}
                     </div>
-                    <div style={{fontSize:11,color:dm?"#8080AA":"#9090B0",marginTop:1}}>
+                    <div style={{fontSize:11,color:dm?"#FF9999":"#9090B0",marginTop:1}}>
                       <span style={{color:e.persona==="ADRI"?"#6B8CFF":"#F472B6"}}>{e.persona}</span>
                       {" · "}{e.categoria}
                     </div>
@@ -708,7 +730,7 @@ export default function App() {
                 if (topCats.length === 0) return null;
                 return (
                   <div style={{marginBottom:14}}>
-                    <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
+                    <div style={{fontSize:11,color:dm?"#FF9999":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
                       📊 Top categorías — {periodoLabel} · {personaLabel}
                     </div>
                     {topCats.map((a,i)=>(
@@ -776,7 +798,7 @@ export default function App() {
 
               return (
                 <div style={{marginBottom:14}}>
-                  <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
+                  <div style={{fontSize:11,color:dm?"#FF9999":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
                     🔔 {periodoLabel} · {personaLabel} — vs {refLabel}
                   </div>
 
@@ -1002,8 +1024,8 @@ function KCard({label,value,accent,sub,dm}) {
   return (
     <div style={{background:dm?"#1A1A2E":"#FFFFFF",border:`1px solid ${dm?"#2A2A3A":"#D0D0E0"}`,borderRadius:10,
       padding:"14px 16px",borderLeft:`2px solid ${accent}`}}>
-      <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:6,fontWeight:600}}>{label}</div>
-      <div style={{fontSize:20,fontWeight:700,color:dm?"#FFFFFF":"#1A1A2E",fontFamily:"monospace"}}>{value}</div>
+      <div style={{fontSize:11,color:dm?"#FF9999":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:6,fontWeight:600}}>{label}</div>
+      <div style={{fontSize:20,fontWeight:700,color:dm?"#FF6B6B":"#1A1A2E",fontFamily:"monospace"}}>{value}</div>
       {sub && <div style={{fontSize:10,color:accent,marginTop:3}}>{sub}</div>}
     </div>
   );
@@ -1012,7 +1034,7 @@ function KCard({label,value,accent,sub,dm}) {
 function Sec({title,children,dm}) {
   return (
     <div style={{background:dm?"#1A1A2E":"#FFFFFF",border:`1px solid ${dm?"#2A2A3A":"#D0D0E0"}`,borderRadius:12,padding:"16px 18px",marginBottom:14}}>
-      <div style={{fontSize:11,color:dm?"#AAAACC":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:14,fontWeight:600}}>{title}</div>
+      <div style={{fontSize:11,color:dm?"#FF9999":"#6060A0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:14,fontWeight:600}}>{title}</div>
       {children}
     </div>
   );
