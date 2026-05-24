@@ -338,7 +338,9 @@ export default function App() {
   const totalMari = allGastos.filter(g=>g.persona==="MARI").reduce((s,g)=>s+g.importe,0);
   const subcats = CATS[form.categoria] || [];
 
-  const recentEntries = [...userGastos, ...ingresos].sort((a,b)=>b.id.localeCompare(a.id)).slice(0,20);
+  const recentEntries = userGastos
+    .filter(g => g.fecha && g.fecha.startsWith(CURRENT_MONTH))
+    .slice(-20).reverse();
 
   const dm = darkMode;
   const bg = dm ? "#0F0F1A" : "#F5F6FA";
@@ -512,33 +514,37 @@ export default function App() {
             )}
 
 
+            {/* Últimos gastos este mes */}
+            <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${dm?"#2A2A3A":"#E8E8F0"}`}}>
+              <div style={{fontSize:11,color:dm?"#8080AA":"#9090B0",letterSpacing:"1px",textTransform:"uppercase",marginBottom:10,fontWeight:600}}>
+                Gastos de este mes ({recentEntries.length})
+              </div>
+
             {recentEntries.length === 0 ? (
-              <div style={{color:"#A0A0C0",fontSize:13,textAlign:"center",padding:40}}>
-                Empieza añadiendo tu primer gasto o ingreso
+              <div style={{color:dm?"#6060A0":"#A0A0C0",fontSize:13,textAlign:"center",padding:20}}>
+                Aún no hay gastos este mes
               </div>
             ) : recentEntries.map(e => {
-              const isGasto = "categoria" in e;
               const col = CAT_COLORS[e.categoria] || "#888";
               return (
-                <div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 0",borderBottom:"1px solid #0C0C16"}}>
-                  <div style={{width:36,height:36,borderRadius:8,
-                    background:(isGasto?col:"#2A5A2A")+"22",
-                    display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
-                    {isGasto?"💸":"💰"}
+                <div key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${dm?"#1E1E2E":"#F0F0F8"}`}}>
+                  <div style={{width:32,height:32,borderRadius:8,
+                    background:col+"22",
+                    display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
+                    💸
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,color:"#2A2A3E",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                      {isGasto?(e.descripcion||e.subcategoria):e.concepto}
+                    <div style={{fontSize:13,fontWeight:600,color:dm?"#FFFFFF":"#1A1A2E",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {e.subcategoria || e.categoria}
                     </div>
-                    <div style={{fontSize:11,color:"#8080AA",marginTop:2}}>
-                      {e.fecha} ·{" "}
+                    <div style={{fontSize:11,color:dm?"#8080AA":"#9090B0",marginTop:1}}>
                       <span style={{color:e.persona==="ADRI"?"#6B8CFF":"#F472B6"}}>{e.persona}</span>
-                      {isGasto && <span style={{color:"#8080AA"}}> · {e.categoria}</span>}
+                      {" · "}{e.categoria}
                     </div>
                   </div>
                   <div style={{fontSize:15,fontWeight:700,fontFamily:"monospace",flexShrink:0,
-                    color:isGasto?"#EDE9E3":"#4FCF4F"}}>
-                    {isGasto?"-":"+"}{ fmt(e.importe)}
+                    color:dm?"#FF8080":"#CC2222"}}>
+                    -{fmt(e.importe)}
                   </div>
                   {deleteId===e.id ? (
                     <div style={{display:"flex",gap:3}}>
@@ -551,6 +557,7 @@ export default function App() {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
 
