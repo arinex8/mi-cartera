@@ -782,13 +782,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Botón reset */}
-            <div style={{marginTop:24,paddingTop:16,borderTop:"1px solid #181824",textAlign:"center"}}>
-              <button onClick={resetStorage} style={{
-                background:"none",border:"1px solid #3A1A1A",borderRadius:8,
-                padding:"8px 16px",color:"#8A4A4A",fontSize:12,cursor:"pointer",fontFamily:"inherit"
-              }}>🗑 Limpiar datos locales (sincronizar con Sheet)</button>
-            </div>
+
             {recentEntries.length === 0 ? (
               <div style={{color:"#A0A0C0",fontSize:13,textAlign:"center",padding:40}}>
                 Empieza añadiendo tu primer gasto o ingreso
