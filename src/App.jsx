@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis
 
 // ── CONFIG ──
 const SHEET_ID = "1AWDbbyt3rMhzjjR2Vj0v_QaAuw1Z80uE4L5tbeDvz6M";
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsx8u3d6mc1wxm-DEOS4jWP1ZJ39XH3Juh-ENfke4o7eFyDW4_T1wevR-gZb5_XIVF/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1c084CK5HwYQk3Ouxy0KKGz2jXQNHYU3zeS__Q9x1VD_v1ATFPEWdQBDFE-N21gG6/exec";
 
 function sendToSheet(gasto) {
   try {
@@ -1273,4 +1273,3 @@ function Sec({title,children}) {
     </div>
   );
 }
-
